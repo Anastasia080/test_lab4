@@ -1,0 +1,38 @@
+# Виртуальное окружение
+venv/
+.env/
+.venv/
+ENV/
+env/
+
+# Файлы Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+
+# Отчеты pytest
+.pytest_cache/
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+*.html
+
+# Файлы IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Дистрибутивы и сборки
+dist/
+build/
+*.egg-info/
