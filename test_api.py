@@ -96,3 +96,98 @@ def test_set_photo(auth_client, created_pet, test_photo_path):
     assert response.status_code == 200
     pet = response.json()
     assert 'pet_photo' in pet
+
+# POST
+# Создание питомца с очень длинным именем (граничное значение)
+def test_create_pet_with_very_long_name(auth_client):
+    long_name = "A" * 1000
+    response = auth_client.create_pet_simple(name=long_name, animal_type="Cat", age=5)
+    assert response.status_code == 200
+    pet = response.json()
+    assert pet['name'] == long_name
+    assert 'id' in pet
+
+# POST
+# Создание питомца со специальными символами в имени
+def test_create_pet_with_special_chars(auth_client):
+    special_name = "!@#$%^&*()_+{}[]|\\:;\"'<>,.?/~`"
+    response = auth_client.create_pet_simple(name=special_name, animal_type="Cat", age=5)
+    assert response.status_code == 200
+    pet = response.json()
+    assert pet['name'] == special_name
+    assert 'id' in pet
+
+# POST
+# Создание питомца с пустым именем
+def test_create_pet_with_empty_name(auth_client):
+    response = auth_client.create_pet_simple(name="", animal_type="Cat", age=5)
+    assert response.status_code == 200
+    pet = response.json()
+    assert pet['name'] == ""
+    assert 'id' in pet
+
+# POST
+# Создание питомца с очень длинным типом животного
+def test_create_pet_with_very_long_animal_type(auth_client):
+    long_type = "B" * 500
+    response = auth_client.create_pet_simple(name="Test", animal_type=long_type, age=5)
+    assert response.status_code == 200
+    pet = response.json()
+    assert pet['animal_type'] == long_type
+    assert 'id' in pet
+
+# GET
+# Получение списка всех питомцев (не только своих)
+def test_get_all_pets(auth_client):
+    response = auth_client.get_pets(filter='') # без фильтра
+    assert response.status_code == 200
+    pets = response.json().get('pets', [])
+    assert isinstance(pets, list)
+    # Список всех питомцев должен быть больше или равен списку своих питомцев
+    my_pets_response = auth_client.get_pets(filter='my_pets')
+    my_pets = my_pets_response.json().get('pets', [])
+    assert len(pets) >= len(my_pets)
+
+# PUT
+# Попытка обновить питомца с некорректными типами данных
+def test_update_pet_with_invalid_data_types(auth_client, created_pet):
+    # Отправляем строку вместо числа в возрасте
+    response = auth_client.update_pet(
+        pet_id=created_pet,
+        name="Обновленный",
+        animal_type="Собака",
+        age="invalid_age"  # Строка вместо числа
+    )
+    assert response.status_code in [200, 400]
+    
+    if response.status_code == 200:
+        updated_pet = response.json()
+        assert 'id' in updated_pet
+
+# POST
+# Проверка структуры ответа при создании питомца
+def test_create_pet_response_structure(auth_client):
+    pet_data = {
+        'name': "Тестовый_питомец",
+        'animal_type': "Хомяк",
+        'age': 2
+    }
+    
+    response = auth_client.create_pet_simple(**pet_data)
+    assert response.status_code == 200
+    
+    # Получаем JSON ответ
+    pet = response.json()
+    
+    # Проверяем наличие всех обязательных полей
+    expected_fields = ['id', 'name', 'animal_type', 'age']
+    for field in expected_fields:
+        assert field in pet, f"Поле '{field}' отсутствует в ответе"
+    
+    # Проверяем типы данных полей
+    assert isinstance(pet['id'], (str, int)), "ID должен быть строкой или числом"
+    assert isinstance(pet['name'], str), "Имя должно быть строкой"
+    assert isinstance(pet['animal_type'], str), "Тип животного должен быть строкой"
+    
+    # Очистка
+    auth_client.delete_pet(pet['id'])
